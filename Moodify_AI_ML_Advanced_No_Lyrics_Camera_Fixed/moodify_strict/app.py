@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify, request, send_from_directory
 from werkzeug.utils import secure_filename
 from pathlib import Path
-import sqlite3, time, math, wave, struct, re, random
+import sqlite3, time, math, wave, struct, re, random, hashlib
 
 BASE = Path(__file__).resolve().parent
 SONG_DIR = BASE / "static" / "songs"
@@ -177,6 +177,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT UNIQUE NOT NULL,
             library_id INTEGER NOT NULL, title TEXT NOT NULL,
             FOREIGN KEY(library_id) REFERENCES libraries(id))""")
+        con.execute("""CREATE TABLE IF NOT EXISTS song_hashes (
+            sha256 TEXT PRIMARY KEY, filename TEXT UNIQUE NOT NULL)""")
         con.execute("""CREATE TABLE IF NOT EXISTS song_features (
             filename TEXT PRIMARY KEY, duration REAL DEFAULT 0, energy REAL DEFAULT .5,
             zcr REAL DEFAULT .1, tempo REAL DEFAULT 100, feature_source TEXT DEFAULT 'metadata')""")
@@ -214,6 +216,12 @@ def init_db():
                 f = audio_features(SONG_DIR / row["filename"])
                 con.execute("INSERT OR REPLACE INTO song_features VALUES(?,?,?,?,?,?)",
                             (row["filename"],f["duration"],f["energy"],f["zcr"],f["tempo"],f["feature_source"]))
+            if not con.execute("SELECT 1 FROM song_hashes WHERE filename=?", (row["filename"],)).fetchone():
+                audio_path = SONG_DIR / row["filename"]
+                if audio_path.is_file():
+                    digest = hashlib.sha256(audio_path.read_bytes()).hexdigest()
+                    con.execute("INSERT OR IGNORE INTO song_hashes(sha256,filename) VALUES(?,?)",
+                                (digest, row["filename"]))
 
 def list_libraries():
     with db() as con:
@@ -294,6 +302,7 @@ def delete_song():
         con.execute("DELETE FROM favorites WHERE filename=?", (filename,))
         con.execute("DELETE FROM song_feedback WHERE filename=?", (filename,))
         con.execute("DELETE FROM song_features WHERE filename=?", (filename,))
+        con.execute("DELETE FROM song_hashes WHERE filename=?", (filename,))
         con.execute("DELETE FROM songs WHERE filename=?", (filename,))
     audio_path = SONG_DIR / filename
     try:
@@ -417,16 +426,47 @@ def upload():
         lib = con.execute("SELECT id FROM libraries WHERE id=?", (library_id,)).fetchone() if library_id else None
         if not lib:
             return jsonify({"error": "Choose a music library before uploading."}), 400
+
+    data = f.read()
+    digest = hashlib.sha256(data).hexdigest()
+    with db() as con:
+        duplicate = con.execute(
+            "SELECT s.title FROM song_hashes h JOIN songs s ON s.filename=h.filename WHERE h.sha256=?",
+            (digest,)
+        ).fetchone()
+        if duplicate:
+            return jsonify({"ok": False, "duplicate": True,
+                            "message": f'{duplicate["title"]} is already in your music library.'}), 409
+
     target = SONG_DIR / safe
     if target.exists():
         target = SONG_DIR / f"{int(time.time() * 1000)}_{safe}"
-    f.save(target)
+    target.write_bytes(data)
     title = Path(safe).stem.replace("_", " ").replace("-", " ").title()
-    features=audio_features(target)
-    with db() as con:
-        con.execute("INSERT INTO songs(filename,library_id,title) VALUES(?,?,?)", (target.name, library_id, title))
-        con.execute("INSERT OR REPLACE INTO song_features VALUES(?,?,?,?,?,?)",(target.name,features["duration"],features["energy"],features["zcr"],features["tempo"],features["feature_source"]))
-    return jsonify({"ok": True, "filename": target.name, "library_id": library_id, "audio_analysis":features})
+    features = {"duration": 0.0, "energy": 0.5, "zcr": 0.1, "tempo": 100.0,
+                "feature_source": "quick upload metadata"}
+    if ext == ".wav":
+        try:
+            with wave.open(str(target), "rb") as wf:
+                features["duration"] = wf.getnframes() / float(wf.getframerate() or 1)
+        except Exception:
+            pass
+    try:
+        with db() as con:
+            con.execute("INSERT INTO songs(filename,library_id,title) VALUES(?,?,?)",
+                        (target.name, library_id, title))
+            con.execute("INSERT INTO song_hashes(sha256,filename) VALUES(?,?)",
+                        (digest, target.name))
+            con.execute("INSERT OR REPLACE INTO song_features VALUES(?,?,?,?,?,?)",
+                        (target.name, features["duration"], features["energy"], features["zcr"],
+                         features["tempo"], features["feature_source"]))
+    except sqlite3.IntegrityError:
+        target.unlink(missing_ok=True)
+        return jsonify({"ok": False, "duplicate": True,
+                        "message": f"{title} is already in your music library."}), 409
+    return jsonify({"ok": True, "filename": target.name, "title": title,
+                    "library_id": library_id, "audio_analysis": features})
+
 
 @app.route("/songs/<path:filename>")
 def serve_song(filename):

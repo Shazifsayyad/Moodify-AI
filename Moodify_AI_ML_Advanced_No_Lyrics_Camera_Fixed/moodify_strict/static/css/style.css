@@ -54,3 +54,12 @@
 .track-heart{transition:color .15s ease,transform .15s ease;}
 .track-heart.is-favorite{transform:scale(1.08);}
 .heart.is-favorite{color:#ff4d6d !important;}
+
+/* Upload progress and per-track result feedback */
+.upload-progress-panel{margin:12px 0 20px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.upload-progress-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px}
+.upload-progress-heading span,.upload-progress-panel p{color:var(--muted);font-size:11px}
+.upload-progress-track{height:8px;margin-top:11px;border-radius:20px;background:#252735;overflow:hidden}
+.upload-progress-track i{display:block;width:0;height:100%;border-radius:20px;background:linear-gradient(90deg,#7760bd,#c18ab8);transition:width .15s ease}
+.upload-progress-panel p{margin:8px 0}
+.upload-results{display:grid;gap:5px;margin:8px 0 0;padding:0;list-style:none;font-size:11px;color:#d9d4e7}

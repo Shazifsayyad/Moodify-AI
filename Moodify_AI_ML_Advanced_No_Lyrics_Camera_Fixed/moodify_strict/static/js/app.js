@@ -71,7 +71,53 @@ $("cancelCreateLibrary").addEventListener("click",()=>{$("createLibraryPanel").h
 $("createLibraryBtn").addEventListener("click",async()=>{const name=$("newLibraryName").value.trim();const emoji=$("newLibraryEmoji").value.trim()||"🎵";if(!name){toast("Enter a library name first.");return}try{const result=await api("/api/libraries",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,emoji})});$("createLibraryPanel").hidden=true;$("newLibraryName").value="";await loadLibraries();openLibrary(result.id);toast("Your new music library is ready!")}catch(e){toast(e.message)}});
 $("backToLibraries").addEventListener("click",closeLibrary);
 $("deleteLibraryBtn").addEventListener("click",async()=>{if(!selectedLibraryId)return;if(!confirm("Delete this empty custom library?"))return;try{await api("/api/libraries",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:selectedLibraryId})});closeLibrary();await loadLibraries();toast("Library deleted") }catch(e){toast(e.message)}});
-$("libraryUpload").addEventListener("change",async e=>{const files=[...e.target.files];if(!selectedLibraryId||!files.length)return;let added=0;for(const file of files){const fd=new FormData();fd.append("song",file);fd.append("library_id",selectedLibraryId);try{await api("/api/upload",{method:"POST",body:fd});added++}catch(err){toast(err.message)}}e.target.value="";await loadSongs();await loadLibraries();if(selectedLibraryId)await renderLibrarySongs();toast(`${added} song${added===1?"":"s"} added to library`) });
+function uploadOneSong(file,libraryId,onProgress){
+  return new Promise((resolve,reject)=>{
+    const fd=new FormData();fd.append("song",file);fd.append("library_id",libraryId);
+    const xhr=new XMLHttpRequest();xhr.open("POST","/api/upload");
+    xhr.upload.onprogress=event=>{if(event.lengthComputable)onProgress(Math.round(event.loaded/event.total*100))};
+    xhr.onload=()=>{let data={};try{data=JSON.parse(xhr.responseText)}catch(_){}
+      if(xhr.status>=200&&xhr.status<300)resolve(data);
+      else reject(Object.assign(new Error(data.message||data.error||"Upload failed"),{duplicate:!!data.duplicate}));
+    };
+    xhr.onerror=()=>reject(new Error("Network error while uploading."));
+    xhr.send(fd);
+  });
+}
+$("libraryUpload").addEventListener("change",async e=>{
+  const files=[...e.target.files];const libraryId=selectedLibraryId;
+  if(!libraryId||!files.length){e.target.value="";return}
+  const panel=$("uploadProgressPanel"),bar=$("uploadProgressBar"),title=$("uploadProgressTitle"),
+        count=$("uploadProgressCount"),detail=$("uploadProgressDetail"),results=$("uploadResults");
+  panel.hidden=false;results.innerHTML="";let completed=0,added=0,duplicates=0,failed=0;
+  const total=files.length;
+  const update=(current,pct)=>{
+    count.textContent=`${completed} / ${total} complete`;
+    title.textContent=`Uploading ${current} (${pct}%)`;
+    detail.textContent=`${added} added · ${duplicates} duplicates skipped · ${failed} failed`;
+    bar.style.width=`${Math.round(((completed+pct/100)/total)*100)}%`;
+  };
+  for(const file of files){
+    update(file.name,0);
+    try{
+      const result=await uploadOneSong(file,libraryId,pct=>update(file.name,pct));
+      added++;completed++;
+      const li=document.createElement("li");li.textContent=`✓ ${result.title||file.name} uploaded successfully`;
+      results.appendChild(li);
+      toast(`${result.title||file.name} uploaded successfully`);
+    }catch(err){
+      completed++;
+      if(err.duplicate){duplicates++;const li=document.createElement("li");li.textContent=`↷ ${file.name} — already uploaded, skipped`;results.appendChild(li)}
+      else{failed++;const li=document.createElement("li");li.textContent=`✕ ${file.name} — ${err.message}`;results.appendChild(li)}
+    }
+    count.textContent=`${completed} / ${total} complete`;
+    bar.style.width=`${Math.round(completed/total*100)}%`;
+    detail.textContent=`${added} added · ${duplicates} duplicates skipped · ${failed} failed`;
+  }
+  title.textContent="Upload process complete";
+  e.target.value="";
+  await loadSongs();await loadLibraries();if(selectedLibraryId)await renderLibrarySongs();
+});
 $("nowFavorite").addEventListener("click",()=>{const f=$("nowFavorite").dataset.filename;if(f)toggleFavorite(f)});
 $("playBtn").addEventListener("click",()=>{if(!audio.src){if(queue.length)playSong(queue[0].filename);else toast("Choose a mood and track first");return}if(audio.paused)audio.play();else audio.pause()});
 $("prevBtn").addEventListener("click",()=>playNext(-1));$("nextBtn").addEventListener("click",()=>playNext(1));audio.addEventListener("ended",()=>playNext(1));audio.addEventListener("play",()=>$("playBtn").textContent="Ⅱ");audio.addEventListener("pause",()=>$("playBtn").textContent="▶");

@@ -67,6 +67,12 @@
       <div id="libraryDetail" hidden>
         <div class="section-head library-detail-head"><div><button class="back-link" id="backToLibraries">← All libraries</button><span class="muted" id="selectedLibraryKicker">YOUR COLLECTION</span><h3 id="selectedLibraryTitle">Music library</h3><p class="library-description" id="selectedLibraryDescription"></p></div><button class="secondary" id="deleteLibraryBtn" hidden>Delete library</button></div>
         <div class="upload-box"><div><b>Add songs to this library</b><p>Choose multiple MP3, WAV, OGG or M4A files from your device.</p></div><label class="upload-btn">＋ Upload songs<input type="file" id="libraryUpload" accept=".mp3,.wav,.ogg,.m4a,audio/*" multiple></label></div>
+        <div id="uploadProgressPanel" class="upload-progress-panel" hidden aria-live="polite">
+          <div class="upload-progress-heading"><b id="uploadProgressTitle">Preparing uploads…</b><span id="uploadProgressCount">0 / 0 complete</span></div>
+          <div class="upload-progress-track"><i id="uploadProgressBar"></i></div>
+          <p id="uploadProgressDetail">Waiting to upload</p>
+          <ul id="uploadResults" class="upload-results"></ul>
+        </div>
         <div class="song-list" id="selectedLibrarySongs"></div>
       </div>
     </section>

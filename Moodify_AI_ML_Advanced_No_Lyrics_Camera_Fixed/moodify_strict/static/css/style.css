@@ -48,3 +48,9 @@
 
 /* Live emotion confidence shown directly below the camera preview */
 .emotion-readout{margin-top:9px;padding:11px 12px;border:1px solid #ffffff18;border-radius:10px;background:#ffffff08;color:#d8d3e5}.emotion-readout-top{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px}.emotion-readout-top strong{font-size:17px;color:#d2b8ff;font-variant-numeric:tabular-nums}.emotion-track{height:6px;margin-top:8px;border-radius:99px;background:#ffffff18;overflow:hidden}.emotion-track i{display:block;width:0;height:100%;border-radius:99px;background:linear-gradient(90deg,#9b7af3,#d67fc5);transition:width .25s ease}
+
+/* Favorite toggle state */
+.track-heart.is-favorite,.heart.is-favorite{color:#ff4d6d !important;}
+.track-heart{transition:color .15s ease,transform .15s ease;}
+.track-heart.is-favorite{transform:scale(1.08);}
+.heart.is-favorite{color:#ff4d6d !important;}

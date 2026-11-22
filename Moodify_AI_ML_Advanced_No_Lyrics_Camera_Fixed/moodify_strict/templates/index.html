@@ -20,14 +20,12 @@
   </aside>
 
   <main class="main">
-    <header class="topbar"><div><span class="muted">YOUR PERSONAL SOUNDTRACK</span><h1 id="pageTitle">Discover your mood</h1></div><div class="status-pill"><i></i> AI player ready</div></header>
+    <header class="topbar"><div><h1 id="pageTitle">Discover your mood</h1></div><div class="status-pill"><i></i> AI player ready</div></header>
 
     <section class="view active" id="view-discover">
       <div class="hero">
         <div class="hero-copy"><span class="tag">✦ MOOD-AWARE MUSIC</span><h2>How are you<br><em>feeling today?</em></h2>
-          <p>A pretrained CNN-based expression model reads your face in the browser. The ML recommender learns from your Like / Skip feedback and ranks songs only inside the matching mood library. You can also choose a mood manually.</p>
-          <div class="hero-actions"><span class="camera-auto-note">◎ CNN expression model · start scan when ready</span><button class="primary" id="startCameraBtn" type="button">Start camera</button><button class="secondary" id="stopCameraBtn" type="button" disabled>Stop camera</button></div>
-          <div class="privacy">⌑ Camera stays in your browser. Frames are not uploaded or saved.</div>
+          <div class="hero-actions"><button class="primary" id="startCameraBtn" type="button">Start camera</button><button class="secondary" id="stopCameraBtn" type="button" disabled>Stop camera</button></div>
         </div>
         <div class="camera-wrap">
           <div class="camera-frame"><video id="camera" autoplay muted playsinline></video><canvas id="overlay"></canvas>
@@ -77,7 +75,7 @@
     <section class="view" id="view-history"><div class="section-head"><div><span class="muted">YOUR RECENT CHECK-INS</span><h3>Mood history</h3></div></div><div class="history-list" id="historyList"></div></section>
 
     <section class="view" id="view-assistant">
-      <div class="section-head"><div><span class="muted">NATURAL LANGUAGE MUSIC HELPER</span><h3>Ask Moodify AI</h3></div></div>
+      <div class="section-head"><div><h3>Ask Moodify AI</h3></div></div>
       <div class="assistant-panel"><p>Tell me how you feel or what kind of music you want. The Naive Bayes intent model will identify a mood and use only its matching library.</p><form id="assistantForm"><input id="assistantQuery" maxlength="500" placeholder="e.g. I feel stressed, play something calming…" required><button class="primary" type="submit">Ask AI ✦</button></form><div id="assistantReply" class="assistant-reply">Your AI assistant is ready.</div><button class="primary" id="assistantUseMood" hidden>Play this mood</button></div>
     </section>
     <section class="view" id="view-analytics">

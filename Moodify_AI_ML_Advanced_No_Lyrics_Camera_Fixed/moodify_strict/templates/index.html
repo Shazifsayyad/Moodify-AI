@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moodify — AI Emotion Music Player</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon">♫</span><span>moodify</span></div>
+    <div class="nav-label">MENU</div>
+    <button class="nav-item active" data-view="discover">◈ &nbsp; Discover</button>
+    <button class="nav-item" data-view="library">▤ &nbsp; My Library</button>
+    <button class="nav-item" data-view="favorites">♡ &nbsp; Favorites</button>
+    <button class="nav-item" data-view="history">◷ &nbsp; Mood History</button>
+    <button class="nav-item" data-view="assistant">✦ &nbsp; AI Assistant</button>
+    <button class="nav-item" data-view="analytics">▥ &nbsp; AI / ML Analytics</button>
+    <div class="sidebar-bottom"><div class="mini-orb">✦</div><b>Music for your mood</b><p>Let your expression guide your next track.</p></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar"><div><span class="muted">YOUR PERSONAL SOUNDTRACK</span><h1 id="pageTitle">Discover your mood</h1></div><div class="status-pill"><i></i> AI player ready</div></header>
+
+    <section class="view active" id="view-discover">
+      <div class="hero">
+        <div class="hero-copy"><span class="tag">✦ MOOD-AWARE MUSIC</span><h2>How are you<br><em>feeling today?</em></h2>
+          <p>A pretrained CNN-based expression model reads your face in the browser. The ML recommender learns from your Like / Skip feedback and ranks songs only inside the matching mood library. You can also choose a mood manually.</p>
+          <div class="hero-actions"><span class="camera-auto-note">◎ CNN expression model · start scan when ready</span><button class="primary" id="startCameraBtn" type="button">Start camera</button><button class="secondary" id="stopCameraBtn" type="button" disabled>Stop camera</button></div>
+          <div class="privacy">⌑ Camera stays in your browser. Frames are not uploaded or saved.</div>
+        </div>
+        <div class="camera-wrap">
+          <div class="camera-frame"><video id="camera" autoplay muted playsinline></video><canvas id="overlay"></canvas>
+            <div class="camera-placeholder" id="cameraPlaceholder"><div class="camera-symbol">◎</div><b>Camera preview</b><small>Click Start camera to begin. Keep your face visible while the AI checks your expression</small></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="emotion-readout" aria-live="polite">
+            <div class="emotion-readout-top"><span id="emotionReadout">Emotion detection will appear here</span><strong id="emotionPercent">—</strong></div>
+            <div class="emotion-track"><i id="emotionProgress"></i></div>
+          </div>
+          <div class="camera-caption"><span id="cameraStatus">Camera is off · click Start camera when ready</span><span class="live-dot"></span></div>
+        </div>
+      </div>
+
+      <div class="section-head"><div><span class="muted">QUICK PICK</span><h3>Or choose your mood</h3></div><span class="muted small">Manual selection works without a camera</span></div>
+      <div class="mood-grid">
+        <button class="mood-card" data-mood="happy"><span>☀️</span><b>Happy</b><small>Bright & upbeat</small></button>
+        <button class="mood-card" data-mood="sad"><span>🌧️</span><b>Sad</b><small>Gentle & uplifting</small></button>
+        <button class="mood-card" data-mood="angry"><span>🌊</span><b>Angry</b><small>Calm & release</small></button>
+        <button class="mood-card" data-mood="neutral"><span>☁️</span><b>Neutral</b><small>Easy listening</small></button>
+        <button class="mood-card" data-mood="surprise"><span>✨</span><b>Surprised</b><small>Unexpected energy</small></button>
+        <button class="mood-card" data-mood="fear"><span>🌿</span><b>Fearful</b><small>Soft & soothing</small></button>
+      </div>
+
+      <div class="section-head"><div><span class="muted">MADE FOR THIS MOMENT</span><h3 id="recommendTitle">Recommended for you</h3></div><span class="muted small" id="recommendMeta">Choose a mood to begin</span></div>
+      <div class="song-list" id="recommendations"><div class="empty">Your mood-based recommendations will appear here.</div></div>
+    </section>
+
+    <section class="view" id="view-library">
+      <div id="libraryOverview">
+        <div class="section-head"><div><span class="muted">YOUR COLLECTIONS</span><h3>Music libraries</h3></div><button class="primary" id="showCreateLibrary">＋ Create library</button></div>
+        <div class="create-library" id="createLibraryPanel" hidden>
+          <input id="newLibraryName" maxlength="40" placeholder="Library name (e.g. Arijit Singh)">
+          <input id="newLibraryEmoji" maxlength="4" value="🎵" aria-label="Library emoji">
+          <button class="primary" id="createLibraryBtn">Create</button><button class="secondary" id="cancelCreateLibrary">Cancel</button>
+        </div>
+        <div class="library-grid" id="libraryGrid"></div>
+      </div>
+      <div id="libraryDetail" hidden>
+        <div class="section-head library-detail-head"><div><button class="back-link" id="backToLibraries">← All libraries</button><span class="muted" id="selectedLibraryKicker">YOUR COLLECTION</span><h3 id="selectedLibraryTitle">Music library</h3><p class="library-description" id="selectedLibraryDescription"></p></div><button class="secondary" id="deleteLibraryBtn" hidden>Delete library</button></div>
+        <div class="upload-box"><div><b>Add songs to this library</b><p>Choose multiple MP3, WAV, OGG or M4A files from your device.</p></div><label class="upload-btn">＋ Upload songs<input type="file" id="libraryUpload" accept=".mp3,.wav,.ogg,.m4a,audio/*" multiple></label></div>
+        <div class="song-list" id="selectedLibrarySongs"></div>
+      </div>
+    </section>
+    <section class="view" id="view-favorites"><div class="section-head"><div><span class="muted">SAVED TRACKS</span><h3>Your favorites</h3></div></div><div class="song-list" id="favoriteSongs"></div></section>
+
+    <section class="view" id="view-history"><div class="section-head"><div><span class="muted">YOUR RECENT CHECK-INS</span><h3>Mood history</h3></div></div><div class="history-list" id="historyList"></div></section>
+
+    <section class="view" id="view-assistant">
+      <div class="section-head"><div><span class="muted">NATURAL LANGUAGE MUSIC HELPER</span><h3>Ask Moodify AI</h3></div></div>
+      <div class="assistant-panel"><p>Tell me how you feel or what kind of music you want. The Naive Bayes intent model will identify a mood and use only its matching library.</p><form id="assistantForm"><input id="assistantQuery" maxlength="500" placeholder="e.g. I feel stressed, play something calming…" required><button class="primary" type="submit">Ask AI ✦</button></form><div id="assistantReply" class="assistant-reply">Your AI assistant is ready.</div><button class="primary" id="assistantUseMood" hidden>Play this mood</button></div>
+    </section>
+    <section class="view" id="view-analytics">
+      <div class="section-head"><div><span class="muted">LEARNING FROM YOUR LISTENING</span><h3>AI / ML Analytics</h3></div><button class="secondary" id="refreshAnalytics">Refresh</button></div>
+      <div class="analytics-stats" id="analyticsStats"></div>
+      <h3 class="subheading">Mood distribution</h3><div id="moodBars" class="mood-bars"></div>
+      <h3 class="subheading">K-Means listener clustering</h3><div id="clusterPanel" class="assistant-reply">Loading listener profiles…</div>
+      <p class="muted small">Clustering becomes meaningful after at least 3 distinct browser profiles have listening history or feedback.</p>
+      <h3 class="subheading">Audio feature analysis</h3><div class="assistant-reply">Uploaded WAV tracks are analysed for duration, signal energy, zero-crossing rate and an approximate tempo. Other formats currently use file metadata estimates unless an audio decoder is added.</div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="player">
+  <div class="now-playing"><div class="album-art" id="albumArt">♫</div><div><b id="nowTitle">Nothing playing</b><small id="nowMood">Choose a mood and a track</small></div><button class="heart" id="nowFavorite" title="Add to favorites">♡</button></div>
+  <div class="player-center"><div class="controls"><button id="prevBtn" title="Previous">|◀</button><button class="play-btn" id="playBtn" title="Play">▶</button><button id="nextBtn" title="Next">▶|</button></div><div class="progress-row"><span id="currentTime">0:00</span><input type="range" id="progress" min="0" max="100" value="0"><span id="duration">0:00</span></div></div>
+  <div class="volume"><span>♪</span><input type="range" id="volume" min="0" max="1" step=".01" value=".8"></div>
+  <audio id="audio"></audio>
+</footer>
+<div class="toast" id="toast"></div>
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body></html>
